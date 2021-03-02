@@ -1,0 +1,24 @@
+---
+- name: Install auto-discovery service
+  hosts: "{{ monitoring_server }}"
+
+  gather_facts: no
+  
+  become: yes
+
+  tasks:
+  - name: 'Stop and remove old container'
+    shell: "/usr/bin/docker stop auto-discovery && /usr/bin/docker rm auto-discovery"
+
+  - name: 'Remove old image'
+    shell: "/usr/bin/docker rmi {{ registry_host }}/y2/auto-discovery"
+
+  - name: 'Login to atrifactory'
+    shell: "/usr/bin/docker login -u {{ registry_user }} -p {{ registry_password }} {{ registry_host }}"
+
+  - name: 'Run service in docker container'
+    shell: "/usr/bin/docker run -d --name auto-discovery -v {{ prom_config_path }}:/prom_config/ {{ registry_host }}/y2/auto-discovery -u {{ vra_restapi_user }} -p \'{{ vra_restapi_password }}\' -s {{ vra_server }} -t {{ vra_tenant }} -m {{ monitoring_server }} -z {{ y2_zone }}"
+
+  - name: 'Logout from artifactory'
+    shell: "/usr/bin/docker logout {{ registry_host }}"
+...
